@@ -38,13 +38,15 @@ bool isLeapYear(int year);
 int daysInMonth(int year, int month);
 int calculateDaysBetween(Date start, Date end);
 Date getCurrentDate();
-Constellation determineConstellation(Date birthDate);
+Constellation determineConstellation(Date birthDate, vector<Constellation>& constellations);
 void initializeConstellations(vector<Constellation>& constellations);
 string getTodaysFortune(const Constellation& c);
 void exportToFile(const string& content, const string& filename);
 bool validateDate(Date date);
 Date inputBirthDate();
 void displayMenu();
+// 新增函数：计算距离下一个生日的天数
+int daysUntilNextBirthday(Date birthDate, Date today);
 
 // 判断闰年
 bool isLeapYear(int year) {
@@ -70,12 +72,14 @@ int daysInMonth(int year, int month) {
 
 // 计算两个日期之间的天数
 int calculateDaysBetween(Date start, Date end) {
-    // 如果开始日期晚于结束日期，交换它们
+    // 确保开始日期在结束日期之前
     bool swapped = false;
+    Date temp = start;
     if (start.year > end.year || 
         (start.year == end.year && start.month > end.month) ||
         (start.year == end.year && start.month == end.month && start.day > end.day)) {
-        swap(start, end);
+        start = end;
+        end = temp;
         swapped = true;
     }
     
@@ -86,17 +90,13 @@ int calculateDaysBetween(Date start, Date end) {
         days += isLeapYear(y) ? 366 : 365;
     }
     
-    // 计算开始年份中剩余的天数
-    for (int m = start.month; m <= 12; m++) {
-        int daysInCurrentMonth = daysInMonth(start.year, m);
-        if (m == start.month) {
-            days -= start.day;
-        } else {
-            days -= daysInCurrentMonth;
-        }
+    // 减去开始日期所在年已经过去的天数
+    for (int m = 1; m < start.month; m++) {
+        days -= daysInMonth(start.year, m);
     }
+    days -= start.day;
     
-    // 计算结束年份中已过的天数
+    // 加上结束日期所在年已经过去的天数
     for (int m = 1; m < end.month; m++) {
         days += daysInMonth(end.year, m);
     }
@@ -116,9 +116,21 @@ Date getCurrentDate() {
 // 判断星座
 Constellation determineConstellation(Date birthDate, vector<Constellation>& constellations) {
     for (const auto& c : constellations) {
-        if ((birthDate.month == c.startMonth && birthDate.day >= c.startDay) ||
-            (birthDate.month == c.endMonth && birthDate.day <= c.endDay)) {
-            return c;
+        // 处理跨年度的星座（如摩羯座）
+        if (c.startMonth > c.endMonth) {
+            if ((birthDate.month == c.startMonth && birthDate.day >= c.startDay) ||
+                (birthDate.month == c.endMonth && birthDate.day <= c.endDay) ||
+                (birthDate.month > c.startMonth) || (birthDate.month < c.endMonth)) {
+                return c;
+            }
+        } else {
+            if ((birthDate.month == c.startMonth && birthDate.day >= c.startDay) &&
+                (birthDate.month == c.endMonth && birthDate.day <= c.endDay)) {
+                return c;
+            }
+            if (birthDate.month > c.startMonth && birthDate.month < c.endMonth) {
+                return c;
+            }
         }
     }
     return constellations[0]; // 默认返回第一个星座
@@ -126,7 +138,6 @@ Constellation determineConstellation(Date birthDate, vector<Constellation>& cons
 
 // 初始化星座数据
 void initializeConstellations(vector<Constellation>& constellations) {
-    // 添加12个星座及其日期范围
     constellations.emplace_back("水瓶座", 1, 20, 2, 18);
     constellations.emplace_back("双鱼座", 2, 19, 3, 20);
     constellations.emplace_back("白羊座", 3, 21, 4, 19);
@@ -140,7 +151,6 @@ void initializeConstellations(vector<Constellation>& constellations) {
     constellations.emplace_back("射手座", 11, 23, 12, 21);
     constellations.emplace_back("摩羯座", 12, 22, 1, 19);
     
-    // 为每个星座添加一些运势内容（这里使用随机种子生成简单的运势）
     srand(time(0));
     vector<string> fortuneTemplates = {
         "今天是充满活力的一天，适合尝试新事物。",
@@ -154,7 +164,7 @@ void initializeConstellations(vector<Constellation>& constellations) {
     };
     
     for (auto& c : constellations) {
-        for (int i = 0; i < 30; i++) { // 为每个星座添加30天的运势
+        for (int i = 0; i < 366; i++) { // 为每个星座添加一年的运势
             int idx = rand() % fortuneTemplates.size();
             c.fortunes.push_back(fortuneTemplates[idx]);
         }
@@ -167,9 +177,7 @@ string getTodaysFortune(const Constellation& c) {
     tm* ltm = localtime(&now);
     int dayOfYear = ltm->tm_yday; // 一年中的第几天
     
-    // 使用日期作为索引获取运势，确保在范围内
-    int idx = dayOfYear % c.fortunes.size();
-    return c.fortunes[idx];
+    return c.fortunes[dayOfYear];
 }
 
 // 导出内容到文件
@@ -210,15 +218,15 @@ Date inputBirthDate() {
     cout << "请输入出生日期(1-31): ";
     cin >> birthDate.day;
     
-    // 如果没有年份，使用当前年份进行验证（不影响实际计算）
+    // 验证日期有效性
     if (!birthDate.hasYear) {
         Date today = getCurrentDate();
-        birthDate.year = today.year;
+        birthDate.year = today.year; // 临时使用当前年份进行验证
         if (!validateDate(birthDate)) {
             cout << "无效的日期！请重新输入。" << endl;
             return inputBirthDate();
         }
-        birthDate.hasYear = false;
+        birthDate.hasYear = false; // 恢复为无年份状态
     } else {
         if (!validateDate(birthDate)) {
             cout << "无效的日期！请重新输入。" << endl;
@@ -241,6 +249,48 @@ void displayMenu() {
     cout << "请选择操作 (1-5): ";
 }
 
+// 计算距离下一个生日的天数（全新实现）
+int daysUntilNextBirthday(Date birthDate, Date today) {
+    // 确定今年的生日日期
+    int birthdayYear = today.year;
+    int birthdayMonth = birthDate.month;
+    int birthdayDay = birthDate.day;
+    
+    // 特殊处理2月29日
+    if (birthdayMonth == 2 && birthdayDay == 29 && !isLeapYear(birthdayYear)) {
+        birthdayDay = 28; // 非闰年调整为2月28日
+    }
+    
+    // 检查今年生日是否已过
+    bool birthdayPassed = false;
+    if (birthdayMonth < today.month) {
+        birthdayPassed = true;
+    } else if (birthdayMonth == today.month) {
+        if (birthdayDay < today.day) {
+            birthdayPassed = true;
+        }
+    }
+    
+    // 如果生日已过，则计算明年的生日
+    if (birthdayPassed) {
+        birthdayYear++;
+        // 再次处理2月29日的情况
+        if (birthDate.month == 2 && birthDate.day == 29) {
+            if (isLeapYear(birthdayYear)) {
+                birthdayDay = 29; // 闰年恢复为2月29日
+            } else {
+                birthdayDay = 28; // 非闰年保持2月28日
+            }
+        }
+    }
+    
+    // 创建生日日期对象
+    Date nextBirthday(birthdayYear, birthdayMonth, birthdayDay);
+    
+    // 计算并返回天数差
+    return calculateDaysBetween(today, nextBirthday);
+}
+
 int main() {
     cout << "欢迎使用生日与星座运势查询程序！" << endl;
     
@@ -260,16 +310,7 @@ int main() {
         switch (choice) {
             case 1: {
                 Date today = getCurrentDate();
-                // 计算下一个生日
-                Date nextBirthday(today.year, birthDate.month, birthDate.day);
-                
-                // 如果今年的生日已经过了，计算明年的
-                if (nextBirthday.month < today.month || 
-                    (nextBirthday.month == today.month && nextBirthday.day < today.day)) {
-                    nextBirthday.year++;
-                }
-                
-                int daysToBirthday = calculateDaysBetween(today, nextBirthday);
+                int daysToBirthday = daysUntilNextBirthday(birthDate, today);
                 cout << "距离下一个生日还有 " << daysToBirthday << " 天。" << endl;
                 
                 // 如果有出生年份，计算已出生天数
@@ -297,7 +338,6 @@ int main() {
                     cout << "请输入文件名: ";
                     cin >> filename;
                     
-                    // 添加日期到运势内容
                     time_t now = time(0);
                     stringstream ss;
                     ss << put_time(localtime(&now), "%Y-%m-%d");
