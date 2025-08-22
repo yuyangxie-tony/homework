@@ -86,6 +86,7 @@ plaintext
 示例输出：
 plaintext
 感谢使用，再见！
+![运行示例](运行图片.png "部分展示")
   
 # 4. VS 项目结构说明
     BirthdayFortune/                  # 解决方案目录
