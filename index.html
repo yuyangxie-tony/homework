@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>每日做饭AI助手</title>
+    <!-- 引入Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- 引入Font Awesome -->
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    
+    <!-- 配置Tailwind自定义颜色和字体 -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#FF8C38',
+                        secondary: '#4A5568',
+                        light: '#F7FAFC',
+                        dark: '#2D3748'
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+    
+    <!-- 自定义工具类 -->
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .content-auto {
+                content-visibility: auto;
+            }
+            .text-shadow {
+                text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            }
+            .transition-custom {
+                transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            }
+        }
+    </style>
+    
+    <style>
+        /* 全局动画定义 */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .animate-fadeIn {
+            animation: fadeIn 0.5s ease-out forwards;
+        }
+        
+        /* 食材标签动画 */
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+        
+        .ingredient-tag:hover {
+            animation: pulse 0.5s ease-in-out;
+        }
+        
+        /* 平滑滚动 */
+        html {
+            scroll-behavior: smooth;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 font-sans text-dark">
+    <!-- 导航栏 -->
+    <header class="bg-white shadow-md fixed w-full top-0 z-50 transition-custom">
+        <div class="container mx-auto px-4 py-3 flex justify-between items-center">
+            <div class="flex items-center space-x-2">
+                <i class="fa fa-cutlery text-primary text-2xl"></i>
+                <h1 class="text-xl md:text-2xl font-bold text-dark">每日做饭AI助手</h1>
+            </div>
+            <nav class="hidden md:flex space-x-6">
+                <a href="#how-it-works" class="text-secondary hover:text-primary transition-custom">使用方法</a>
+                <a href="#examples" class="text-secondary hover:text-primary transition-custom">示例</a>
+                <a href="#about" class="text-secondary hover:text-primary transition-custom">关于</a>
+            </nav>
+            <button class="md:hidden text-secondary text-xl">
+                <i class="fa fa-bars"></i>
+            </button>
+        </div>
+    </header>
+
+    <!-- 主内容区 -->
+    <main class="container mx-auto px-4 pt-24 pb-16">
+        <!-- 英雄区域 -->
+        <section class="text-center mb-16 animate-fadeIn">
+            <h2 class="text-[clamp(2rem,5vw,3.5rem)] font-bold text-dark mb-6 text-shadow">
+                有食材，不知道做什么？
+            </h2>
+            <p class="text-secondary text-lg md:text-xl max-w-2xl mx-auto mb-8">
+                输入你现有的食材，AI将为你生成美味菜谱和B站教学视频，轻松解决每日做饭难题
+            </p>
+            <div class="flex justify-center">
+                <a href="#assistant" class="bg-primary hover:bg-primary/90 text-white font-medium py-3 px-8 rounded-full shadow-lg hover:shadow-xl transition-custom flex items-center">
+                    <span>开始使用</span>
+                    <i class="fa fa-arrow-right ml-2"></i>
+                </a>
+            </div>
+        </section>
+
+        <!-- AI助手区域 -->
+        <section id="assistant" class="bg-white rounded-2xl shadow-lg p-6 md:p-8 mb-16 animate-fadeIn" style="animation-delay: 0.1s;">
+            <h3 class="text-2xl font-bold mb-6 text-center">食材到菜谱，一步到位</h3>
+            
+            <!-- 食材输入区域 -->
+            <div class="mb-8">
+                <label for="ingredients" class="block text-secondary font-medium mb-2">输入你拥有的食材（用逗号分隔，例如：番茄,鸡蛋,土豆）</label>
+                <div class="flex flex-col md:flex-row gap-4">
+                    <input 
+                        type="text" 
+                        id="ingredients" 
+                        placeholder="例如：番茄,鸡蛋,土豆" 
+                        class="flex-grow px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-custom"
+                    >
+                    <button id="generate-btn" class="bg-primary hover:bg-primary/90 text-white font-medium py-3 px-6 rounded-lg shadow hover:shadow-md transition-custom whitespace-nowrap">
+                        <i class="fa fa-magic mr-2"></i>生成菜谱
+                    </button>
+                </div>
+                
+                <!-- 常用食材标签 -->
+                <div class="mt-4 flex flex-wrap gap-2">
+                    <span class="text-secondary text-sm">常用食材：</span>
+                    <span class="ingredient-tag bg-gray-100 hover:bg-primary/10 text-secondary px-3 py-1 rounded-full text-sm cursor-pointer transition-custom">番茄</span>
+                    <span class="ingredient-tag bg-gray-100 hover:bg-primary/10 text-secondary px-3 py-1 rounded-full text-sm cursor-pointer transition-custom">鸡蛋</span>
+                    <span class="ingredient-tag bg-gray-100 hover:bg-primary/10 text-secondary px-3 py-1 rounded-full text-sm cursor-pointer transition-custom">土豆</span>
+                    <span class="ingredient-tag bg-gray-100 hover:bg-primary/10 text-secondary px-3 py-1 rounded-full text-sm cursor-pointer transition-custom">猪肉</span>
+                    <span class="ingredient-tag bg-gray-100 hover:bg-primary/10 text-secondary px-3 py-1 rounded-full text-sm cursor-pointer transition-custom">青菜</span>
+                </div>
+            </div>
+            
+            <!-- 加载状态（默认隐藏） -->
+            <div id="loading" class="hidden flex justify-center items-center py-10">
+                <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+                <p class="ml-4 text-secondary">AI正在为你生成菜谱...</p>
+            </div>
+            
+            <!-- 菜谱结果区域（默认隐藏） -->
+            <div id="recipe-result" class="hidden animate-fadeIn">
+                <div class="border-t border-gray-200 pt-6">
+                    <h4 id="recipe-title" class="text-xl font-bold mb-4">西红柿炒鸡蛋</h4>
+                    
+                    <div class="grid md:grid-cols-3 gap-6">
+                        <!-- 食材列表 -->
+                        <div class="md:col-span-1">
+                            <div class="bg-gray-50 p-4 rounded-lg">
+                                <h5 class="font-semibold text-secondary mb-3 flex items-center">
+                                    <i class="fa fa-shopping-basket text-primary mr-2"></i>所需食材
+                                </h5>
+                                <ul id="ingredients-list" class="space-y-2">
+                                    <li class="flex items-center">
+                                        <i class="fa fa-check-circle text-green-500 mr-2"></i>
+                                        <span>番茄 2个</span>
+                                    </li>
+                                    <li class="flex items-center">
+                                        <i class="fa fa-check-circle text-green-500 mr-2"></i>
+                                        <span>鸡蛋 3个</span>
+                                    </li>
+                                    <li class="flex items-center">
+                                        <i class="fa fa-check-circle text-green-500 mr-2"></i>
+                                        <span>葱 少许</span>
+                                    </li>
+                                    <li class="flex items-center">
+                                        <i class="fa fa-check-circle text-green-500 mr-2"></i>
+                                        <span>盐 适量</span>
+                                    </li>
+                                    <li class="flex items-center">
+                                        <i class="fa fa-check-circle text-green-500 mr-2"></i>
+                                        <span>食用油 适量</span>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                        
+                        <!-- 烹饪步骤 -->
+                        <div class="md:col-span-2">
+                            <h5 class="font-semibold text-secondary mb-3 flex items-center">
+                                <i class="fa fa-list-ol text-primary mr-2"></i>烹饪步骤
+                            </h5>
+                            <div id="cooking-steps" class="space-y-4">
+                                <div class="flex">
+                                    <div class="flex-shrink-0 h-8 w-8 rounded-full bg-primary text-white flex items-center justify-center font-bold mr-3">1</div>
+                                    <p>番茄洗净切块，鸡蛋打入碗中搅匀，葱切葱花备用。</p>
+                                </div>
+                                <div class="flex">
+                                    <div class="flex-shrink-0 h-8 w-8 rounded-full bg-primary text-white flex items-center justify-center font-bold mr-3">2</div>
+                                    <p>热锅倒油，油热后倒入蛋液，快速翻炒至凝固，盛出备用。</p>
+                                </div>
+                                <div class="flex">
+                                    <div class="flex-shrink-0 h-8 w-8 rounded-full bg-primary text-white flex items-center justify-center font-bold mr-3">3</div>
+                                    <p>锅中再加少许油，放入葱花爆香，加入番茄块翻炒。</p>
+                                </div>
+                                <div class="flex">
+                                    <div class="flex-shrink-0 h-8 w-8 rounded-full bg-primary text-white flex items-center justify-center font-bold mr-3">4</div>
+                                    <p>炒至番茄出汁，加入适量盐调味，倒入炒好的鸡蛋翻炒均匀即可。</p>
+                                </div>
+                            </div>
+                            
+                            <!-- B站视频链接 -->
+                            <div class="mt-6 p-4 bg-blue-50 rounded-lg border border-blue-100">
+                                <h5 class="font-semibold text-blue-700 mb-3 flex items-center">
+                                    <i class="fa fa-play-circle text-blue-500 mr-2"></i>视频教程
+                                </h5>
+                                <a href="https://www.bilibili.com/video/BV1xx411c7mN" target="_blank" class="flex items-center text-blue-600 hover:text-blue-800 transition-custom">
+                                    <i class="fa fa-external-link mr-2"></i>
+                                    <span>【家常菜】西红柿炒鸡蛋的完美做法，简单美味又下饭</span>
+                                    <img src="https://i0.hdslb.com/bfs/archive/43a267f307f80f612d5e17c6a5b108a9e611.jpg" alt="视频缩略图" class="ml-3 h-16 w-24 object-cover rounded">
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+        <!-- 使用方法 -->
+        <section id="how-it-works" class="mb-16 animate-fadeIn" style="animation-delay: 0.2s;">
+            <h3 class="text-2xl font-bold mb-8 text-center">使用方法</h3>
+            
+            <div class="grid md:grid-cols-3 gap-8">
+                <div class="bg-white p-6 rounded-xl shadow-md hover:shadow-lg transition-custom text-center">
+                    <div class="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <i class="fa fa-keyboard-o text-primary text-2xl"></i>
+                    </div>
+                    <h4 class="text-lg font-semibold mb-3">输入食材</h4>
+                    <p class="text-secondary">在输入框中填写你现有的食材，用逗号分隔，也可以点击常用食材标签快速添加</p>
+                </div>
+                
+                <div class="bg-white p-6 rounded-xl shadow-md hover:shadow-lg transition-custom text-center">
+                    <div class="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <i class="fa fa-magic text-primary text-2xl"></i>
+                    </div>
+                    <h4 class="text-lg font-semibold mb-3">生成菜谱</h4>
+                    <p class="text-secondary">点击"生成菜谱"按钮，AI将根据你提供的食材，智能匹配最合适的菜谱</p>
+                </div>
+                
+                <div class="bg-white p-6 rounded-xl shadow-md hover:shadow-lg transition-custom text-center">
+                    <div class="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <i class="fa fa-play-circle text-primary text-2xl"></i>
+                    </div>
+                    <h4 class="text-lg font-semibold mb-3">观看视频</h4>
+                    <p class="text-secondary">查看详细的烹饪步骤，点击B站视频链接，观看专业的实操教学</p>
+                </div>
+            </div>
+        </section>
+        
+        <!-- 示例展示 -->
+        <section id="examples" class="mb-16 animate-fadeIn" style="animation-delay: 0.3s;">
+            <h3 class="text-2xl font-bold mb-8 text-center">菜谱示例</h3>
+            
+            <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- 示例1 -->
+                <div class="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-lg transition-custom">
+                    <img src="https://picsum.photos/seed/tomatoegg/600/400" alt="西红柿炒鸡蛋" class="w-full h-48 object-cover">
+                    <div class="p-5">
+                        <h4 class="font-bold text-lg mb-2">西红柿炒鸡蛋</h4>
+                        <p class="text-secondary text-sm mb-4">简单又美味的家常菜，酸甜可口，超级下饭</p>
+                        <div class="flex flex-wrap gap-2 mb-4">
+                            <span class="bg-gray-100 text-secondary px-2 py-1 rounded text-xs">番茄</span>
+                            <span class="bg-gray-100 text-secondary px-2 py-1 rounded text-xs">鸡蛋</span>
+                        </div>
+                        <a href="#" class="text-primary hover:text-primary/80 text-sm font-medium transition-custom">查看详情 <i class="fa fa-angle-right ml-1"></i></a>
+                    </div>
+                </div>
+                
+                <!-- 示例2 -->
+                <div class="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-lg transition-custom">
+                    <img src="https://picsum.photos/seed/potatostew/600/400" alt="土豆炖肉" class="w-full h-48 object-cover">
+                    <div class="p-5">
+                        <h4 class="font-bold text-lg mb-2">土豆炖肉</h4>
+                        <p class="text-secondary text-sm mb-4">经典家常菜，土豆绵软，肉质酥烂，香气四溢</p>
+                        <div class="flex flex-wrap gap-2 mb-4">
+                            <span class="bg-gray-100 text-secondary px-2 py-1 rounded text-xs">土豆</span>
+                            <span class="bg-gray-100 text-secondary px-2 py-1 rounded text-xs">猪肉</span>
+                        </div>
+                        <a href="#" class="text-primary hover:text-primary/80 text-sm font-medium transition-custom">查看详情 <i class="fa fa-angle-right ml-1"></i></a>
+                    </div>
+                </div>
+                
+                <!-- 示例3 -->
+                <div class="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-lg transition-custom">
+                    <img src="https://picsum.photos/seed/vegetablesalad/600/400" alt="蔬菜沙拉" class="w-full h-48 object-cover">
+                    <div class="p-5">
+                        <h4 class="font-bold text-lg mb-2">蔬菜沙拉</h4>
+                        <p class="text-secondary text-sm mb-4">清爽健康的沙拉，简单易做，营养丰富</p>
+                        <div class="flex flex-wrap gap-2 mb-4">
+                            <span class="bg-gray-100 text-secondary px-2 py-1 rounded text-xs">生菜</span>
+                            <span class="bg-gray-100 text-secondary px-2 py-1 rounded text-xs">黄瓜</span>
+                            <span class="bg-gray-100 text-secondary px-2 py-1 rounded text-xs">番茄</span>
+                        </div>
+                        <a href="#" class="text-primary hover:text-primary/80 text-sm font-medium transition-custom">查看详情 <i class="fa fa-angle-right ml-1"></i></a>
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+        <!-- 关于我们 -->
+        <section id="about" class="bg-white rounded-2xl shadow-lg p-6 md:p-8 animate-fadeIn" style="animation-delay: 0.4s;">
+            <h3 class="text-2xl font-bold mb-6 text-center">关于每日做饭AI助手</h3>
+            
+            <div class="max-w-3xl mx-auto text-secondary">
+                <p class="mb-4">每日做饭AI助手是一款专注于解决"有食材不知道做什么"的智能工具。我们的使命是让每个人都能轻松烹饪美味佳肴，减少食材浪费，提升生活品质。</p>
+                
+                <p class="mb-4">通过先进的AI算法，我们能够根据用户提供的食材，快速匹配最合适的菜谱，并提供详细的烹饪步骤。同时，我们还会为您推荐B站上相关的优质教学视频，让您不仅知道怎么做，还能直观地看到怎么做。</p>
+                
+                <div class="mt-8 flex flex-col md:flex-row gap-6 items-center justify-center">
+                    <div class="text-center">
+                        <div class="text-3xl font-bold text-primary mb-1">1000+</div>
+                        <p class="text-secondary">精选菜谱</p>
+                    </div>
+                    <div class="text-center">
+                        <div class="text-3xl font-bold text-primary mb-1">5000+</div>
+                        <p class="text-secondary">视频教程</p>
+                    </div>
+                    <div class="text-center">
+                        <div class="text-3xl font-bold text-primary mb-1">10万+</div>
+                        <p class="text-secondary">用户信赖</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- 页脚 -->
+    <footer class="bg-dark text-white py-10">
+        <div class="container mx-auto px-4">
+            <div class="grid md:grid-cols-3 gap-8">
+                <div>
+                    <div class="flex items-center space-x-2 mb-4">
+                        <i class="fa fa-cutlery text-primary text-2xl"></i>
+                        <h2 class="text-xl font-bold">每日做饭AI助手</h2>
+                    </div>
+                    <p class="text-gray-400 mb-4">让做饭变得简单有趣，轻松解决每日饮食难题</p>
+                    <div class="flex space-x-4">
+                        <a href="#" class="text-gray-400 hover:text-primary transition-custom"><i class="fa fa-weixin text-xl"></i></a>
+                        <a href="#" class="text-gray-400 hover:text-primary transition-custom"><i class="fa fa-weibo text-xl"></i></a>
+                        <a href="#" class="text-gray-400 hover:text-primary transition-custom"><i class="fa fa-bilibili text-xl"></i></a>
+                    </div>
+                </div>
+                
+                <div>
+                    <h3 class="text-lg font-semibold mb-4">快速链接</h3>
+                    <ul class="space-y-2">
+                        <li><a href="#assistant" class="text-gray-400 hover:text-primary transition-custom">开始使用</a></li>
+                        <li><a href="#how-it-works" class="text-gray-400 hover:text-primary transition-custom">使用方法</a></li>
+                        <li><a href="#examples" class="text-gray-400 hover:text-primary transition-custom">菜谱示例</a></li>
+                        <li><a href="#about" class="text-gray-400 hover:text-primary transition-custom">关于我们</a></li>
+                    </ul>
+                </div>
+                
+                <div>
+                    <h3 class="text-lg font-semibold mb-4">联系我们</h3>
+                    <ul class="space-y-2">
+                        <li class="flex items-center text-gray-400">
+                            <i class="fa fa-envelope-o mr-2 text-primary"></i>
+                            <span>contact@cookingai.com</span>
+                        </li>
+                        <li class="flex items-center text-gray-400">
+                            <i class="fa fa-phone mr-2 text-primary"></i>
+                            <span>400-123-4567</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="border-t border-gray-800 mt-8 pt-8 text-center text-gray-500 text-sm">
+                <p>&copy; 2023 每日做饭AI助手 版权所有</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- JavaScript -->
+    <script>
+        // 食材标签点击事件
+        document.querySelectorAll('.ingredient-tag').forEach(tag => {
+            tag.addEventListener('click', function() {
+                const input = document.getElementById('ingredients');
+                const currentValue = input.value.trim();
+                
+                // 如果输入框已有内容且不以逗号结尾，添加逗号
+                if (currentValue && !currentValue.endsWith(',')) {
+                    input.value = currentValue + ', ' + this.textContent;
+                } 
+                // 如果输入框为空，直接添加
+                else if (!currentValue) {
+                    input.value = this.textContent;
+                } 
+                // 如果输入框以逗号结尾，直接添加
+                else {
+                    input.value = currentValue + ' ' + this.textContent;
+                }
+                
+                // 聚焦到输入框
+                input.focus();
+            });
+        });
+        
+        // 生成菜谱按钮点击事件（对接后端+豆包AI）
+        document.getElementById('generate-btn').addEventListener('click', async function() {
+            const ingredients = document.getElementById('ingredients').value.trim();
+            
+            // 1. 前端简单验证
+            if (!ingredients) {
+                alert('请输入至少一种食材');
+                return;
+            }
+
+            // 2. 显示加载状态
+            document.getElementById('loading').classList.remove('hidden');
+            document.getElementById('recipe-result').classList.add('hidden');
+
+            try {
+                // 3. 调用后端接口（传递食材，获取豆包AI菜谱）
+                const response = await fetch('http://localhost:3000/api/generate-recipe', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ ingredients: ingredients }) // 传递用户输入的食材
+                });
+
+                const result = await response.json();
+                if (!response.ok || !result.success) {
+                    throw new Error(result.error || '生成菜谱失败');
+                }
+
+                // 4. 提取后端返回的菜谱数据
+                const { recipeName, recipeIngredients, recipeSteps, b站Video } = result.data;
+
+                // 5. 动态渲染菜谱到网页
+                // 5.1 渲染菜谱名称
+                document.getElementById('recipe-title').textContent = recipeName;
+
+                // 5.2 渲染所需食材
+                const ingredientsList = document.getElementById('ingredients-list');
+                ingredientsList.innerHTML = ''; // 清空原有内容
+                recipeIngredients.forEach(ing => {
+                    const li = document.createElement('li');
+                    li.className = 'flex items-center';
+                    li.innerHTML = `<i class="fa fa-check-circle text-green-500 mr-2"></i><span>${ing}</span>`;
+                    ingredientsList.appendChild(li);
+                });
+
+                // 5.3 渲染烹饪步骤
+                const cookingSteps = document.getElementById('cooking-steps');
+                cookingSteps.innerHTML = ''; // 清空原有内容
+                recipeSteps.forEach((step, index) => {
+                    const stepDiv = document.createElement('div');
+                    stepDiv.className = 'flex';
+                    stepDiv.innerHTML = `
+                        <div class="flex-shrink-0 h-8 w-8 rounded-full bg-primary text-white flex items-center justify-center font-bold mr-3">${index + 1}</div>
+                        <p>${step}</p>
+                    `;
+                    cookingSteps.appendChild(stepDiv);
+                });
+
+                // 5.4 渲染B站视频链接
+                const videoContainer = cookingSteps.nextElementSibling; // 获取视频链接容器
+                videoContainer.innerHTML = `
+                    <h5 class="font-semibold text-blue-700 mb-3 flex items-center">
+                        <i class="fa fa-play-circle text-blue-500 mr-2"></i>视频教程
+                    </h5>
+                    <a href="${b站Video.url}" target="_blank" class="flex items-center text-blue-600 hover:text-blue-800 transition-custom">
+                        <i class="fa fa-external-link mr-2"></i>
+                        <span>${b站Video.title}</span>
+                        <img src="${b站Video.thumbnail}" alt="视频缩略图" class="ml-3 h-16 w-24 object-cover rounded">
+                    </a>
+                `;
+
+                // 6. 显示结果并滚动到视图
+                document.getElementById('loading').classList.add('hidden');
+                document.getElementById('recipe-result').classList.remove('hidden');
+                document.getElementById('recipe-result').scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+            } catch (error) {
+                // 7. 错误处理
+                document.getElementById('loading').classList.add('hidden');
+                alert(`生成失败：${error.message}`);
+                console.error('前端请求错误：', error);
+            }
+        });
+        
+        // 导航栏滚动效果
+        window.addEventListener('scroll', function() {
+            const header = document.querySelector('header');
+            if (window.scrollY > 50) {
+                header.classList.add('py-2', 'shadow-lg');
+                header.classList.remove('py-3', 'shadow-md');
+            } else {
+                header.classList.add('py-3', 'shadow-md');
+                header.classList.remove('py-2', 'shadow-lg');
+            }
+        });
+    </script>
+</body>
+</html>
